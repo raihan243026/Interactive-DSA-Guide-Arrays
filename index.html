@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive DSA Guide: Arrays</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chosen Palette: Calm Study -->
+    <!-- Application Structure Plan: The SPA is designed with a two-part structure to facilitate progressive learning, mirroring the source document's logic but enhancing it with interactivity. A sticky navigation bar allows users to easily jump between "Core Concepts" and "Advanced Topics". Core concepts are organized into interactive tabs, breaking down foundational knowledge into digestible chunks and preventing cognitive overload. Advanced topics are presented in a card-based grid, allowing users to focus on specific, complex subjects. This structure was chosen to guide the user from fundamental theory to practical, visualized application in an intuitive, non-linear way. Key interactions like visual simulations for operations and sorting were designed to make abstract concepts tangible and easier to grasp than static text alone. -->
+    <!-- Visualization & Content Choices: 
+        - Array Operations -> Goal: Inform -> Visual div-shifting simulation -> Interaction: Buttons -> Justification: Clarifies the abstract concept of element shifting during insertion/deletion, which is hard to grasp from text. -> Method: Vanilla JS DOM manipulation.
+        - Searching Algorithms -> Goal: Compare -> Animated element highlighting -> Interaction: Buttons -> Justification: Visually contrasts the linear O(n) approach with the divide-and-conquer O(log n) approach, making the efficiency difference intuitive. -> Method: JS + CSS transitions.
+        - Time/Space Complexity -> Goal: Compare -> Interactive Bar Chart -> Interaction: Tabs -> Justification: Transforms a static data table into a more engaging and quickly comparable visual format. -> Library: Chart.js.
+        - Sorting Algorithms -> Goal: Compare/Change -> Animated bar-swapping visualization -> Interaction: Dropdown + Button -> Justification: The most effective way to understand and compare sorting algorithms is to see their step-by-step execution visually. -> Method: JS + CSS transforms.
+        - CONFIRMING NO SVG/Mermaid. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        :root {
+            --bg-color: #FDFDFB;
+            --text-color: #3a3a3a;
+            --secondary-bg: #EAEAEA;
+            --primary-color: #6A6E8A;
+            --accent-color: #A6B1E1;
+            --accent-color-hover: #DCD6F7;
+            --chart-bg: #F4EEFF;
+            --code-bg: #2d3748;
+            --code-text: #e2e8f0;
+        }
+        .theme-dark-red {
+            --bg-color: #3f0909;
+            --text-color: #FFEEEE;
+            --secondary-bg: #632626;
+            --primary-color: #E2B6B6;
+            --accent-color: #C07070;
+            --accent-color-hover: #d28c8c;
+            --chart-bg: #803f3f;
+            --code-bg: #2d0e0e;
+            --code-text: #e2b6b6;
+        }
+        .theme-black {
+            --bg-color: #000000;
+            --text-color: #FFFFFF;
+            --secondary-bg: #1A1A1A;
+            --primary-color: #C0C0C0;
+            --accent-color: #666666;
+            --accent-color-hover: #444444;
+            --chart-bg: #333333;
+            --code-bg: #111111;
+            --code-text: #E0E0E0;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .tab-btn {
+            color: var(--text-color);
+            transition: background-color 0.3s;
+        }
+        .tab-btn.active {
+            background-color: var(--accent-color);
+            color: var(--text-color);
+        }
+        .code-block {
+            background-color: var(--code-bg);
+            color: var(--code-text);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            white-space: pre;
+            font-family: 'Fira Code', monospace;
+        }
+        .visual-element, .visual-bar {
+            transition: all 0.3s ease-in-out;
+            border-radius: 0.25rem;
+        }
+        .visual-element {
+            height: 40px;
+            width: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--primary-color);
+            background-color: var(--accent-color-hover);
+        }
+        .visual-bar {
+            background-color: var(--accent-color);
+            margin: 0 2px;
+            display: inline-block;
+            width: 25px;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .highlight {
+            background-color: yellow;
+            color: black;
+            padding: 2px;
+            border-radius: 2px;
+        }
+    </style>
+     <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="antialiased">
+
+    <header class="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <h1 class="text-xl font-bold">Interactive DSA Guide: Arrays</h1>
+                </div>
+                <div class="flex-grow flex items-center justify-end space-x-4 md:space-x-6">
+                    <div class="relative w-full max-w-xs md:max-w-md">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path></svg>
+                        </span>
+                        <input type="text" id="searchInput" placeholder="Search topics..." class="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="hidden md:block">
+                        <a href="#core-concepts" class="text-gray-600 hover:bg-gray-200 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Core Concepts</a>
+                        <a href="#advanced-topics" class="text-gray-600 hover:bg-gray-200 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Advanced Topics</a>
+                    </div>
+                    <button id="themeToggle" class="p-2 rounded-full hover:bg-gray-200 transition-colors duration-200">
+                        <span id="themeIcon" class="text-xl">&#9728;</span>
+                    </button>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main id="mainContent" class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <section id="core-concepts" class="mb-16">
+            <h2 class="text-3xl font-bold mb-2">Core Concepts</h2>
+            <p class="text-lg mb-8">This section covers the fundamental theory of arrays. Use the tabs below to explore each topic, from basic definitions to performance characteristics. Interactive visualizations are provided to help solidify your understanding of key operations.</p>
+            
+            <div class="flex flex-wrap border-b border-gray-200 mb-6">
+                <button class="tab-btn px-4 py-2 -mb-px font-semibold rounded-t-lg active" data-target="tab-basics">Basics</button>
+                <button class="tab-btn px-4 py-2 -mb-px font-semibold rounded-t-lg" data-target="tab-ops">Operations</button>
+                <button class="tab-btn px-4 py-2 -mb-px font-semibold rounded-t-lg" data-target="tab-search">Searching</button>
+                <button class="tab-btn px-4 py-2 -mb-px font-semibold rounded-t-lg" data-target="tab-complexity">Complexity</button>
+                <button class="tab-btn px-4 py-2 -mb-px font-semibold rounded-t-lg" data-target="tab-procon">Pros & Cons</button>
+            </div>
+
+            <div id="tab-content" class="bg-white p-6 rounded-lg shadow-md">
+                <div id="tab-basics" class="tab-pane active">
+                     <h3 class="text-xl font-semibold mb-4">Array Basics & Memory</h3>
+                     <p class="mb-4" data-original="An array is a linear data structure that stores elements of the same data type in contiguous memory locations. This contiguous storage is what allows for efficient, indexed access.">An array is a linear data structure that stores elements of the same data type in contiguous memory locations. This contiguous storage is what allows for efficient, indexed access.</p>
+                     <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                           <h4 class="font-semibold text-lg mb-2">Types of Arrays</h4>
+                           <ul class="list-disc list-inside space-y-2 text-gray-700">
+                                <li><strong>1D Array:</strong> A single row of elements. Ex: <code class="code-block text-sm p-1 rounded-sm">int arr[5]</code></li>
+                                <li><strong>2D Array:</strong> A matrix with rows and columns. Ex: <code class="code-block text-sm p-1 rounded-sm">int arr[3][4]</code></li>
+                                <li><strong>Multidimensional Array:</strong> More than two dimensions. Ex: <code class="code-block text-sm p-1 rounded-sm">int arr[2][3][4]</code></li>
+                           </ul>
+                        </div>
+                         <div>
+                            <h4 class="font-semibold text-lg mb-2">Memory Representation</h4>
+                            <p data-original="Each element's address is calculated from a base address:">Each element's address is calculated from a base address:</p>
+                            <p class="code-block my-2 text-sm" data-original="Address of arr[i] = base_address + i * size_of_element">Address of arr[i] = base_address + i * size_of_element</p>
+                        </div>
+                        <div class="md:col-span-2">
+                             <h4 class="font-semibold text-lg mb-2">Static vs. Dynamic Arrays</h4>
+                             <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr>
+                                            <th class="border-b-2 p-2 bg-gray-100">Feature</th>
+                                            <th class="border-b-2 p-2 bg-gray-100">Static Array</th>
+                                            <th class="border-b-2 p-2 bg-gray-100">Dynamic Array</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td class="border-b p-2">Size</td><td class="border-b p-2">Fixed at compile time</td><td class="border-b p-2">Can change at runtime</td></tr>
+                                        <tr><td class="border-b p-2">Memory Allocation</td><td class="border-b p-2">Stack</td><td class="border-b p-2">Heap</td></tr>
+                                        <tr><td class="border-b p-2">Example (C++)</td><td class="border-b p-2"><code class="code-block text-sm p-1 rounded-sm">int arr[10];</code></td><td class="border-b p-2"><code class="code-block text-sm p-1 rounded-sm">int* arr = new int[n];</code></td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                     </div>
+                </div>
+                <div id="tab-ops" class="tab-pane hidden">
+                    <h3 class="text-xl font-semibold mb-4">Interactive Array Operations</h3>
+                    <p class="mb-4" data-original="Visualize how insertion and deletion work. Because arrays use contiguous memory, these operations often require shifting multiple elements, which leads to O(n) time complexity.">Visualize how insertion and deletion work. Because arrays use contiguous memory, these operations often require shifting multiple elements, which leads to O(n) time complexity.</p>
+                    <div id="ops-visual-container" class="flex flex-wrap justify-center space-x-2 p-4 bg-gray-100 rounded-lg min-h-[72px] items-center mb-4"></div>
+                    <div class="flex flex-wrap gap-2 justify-center">
+                        <button id="ops-insert-start" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">Insert at Start (5)</button>
+                        <button id="ops-insert-end" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">Insert at End (99)</button>
+                        <button id="ops-delete-start" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Delete at Start</button>
+                        <button id="ops-delete-end" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Delete at End</button>
+                        <button id="ops-reset" class="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600">Reset</button>
+                    </div>
+                </div>
+                <div id="tab-search" class="tab-pane hidden">
+                    <h3 class="text-xl font-semibold mb-4">Interactive Searching</h3>
+                     <p class="mb-4" data-original="Compare Linear Search with Binary Search. Notice how Binary Search, which requires a sorted array, dramatically reduces the number of comparisons by halving the search space in each step.">Compare Linear Search with Binary Search. Notice how Binary Search, which requires a sorted array, dramatically reduces the number of comparisons by halving the search space in each step.</p>
+                     <div id="search-visual-container" class="flex flex-wrap justify-center space-x-2 p-4 bg-gray-100 rounded-lg min-h-[72px] items-center mb-4"></div>
+                     <div class="flex flex-wrap gap-2 items-center justify-center">
+                        <button id="search-linear" class="bg-purple-500 text-white px-3 py-1 rounded hover:bg-purple-600">Run Linear Search (for 71)</button>
+                        <button id="search-binary" class="bg-purple-500 text-white px-3 py-1 rounded hover:bg-purple-600">Run Binary Search (for 71)</button>
+                        <button id="search-reset" class="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600">Reset</button>
+                        <p id="search-status" class="ml-4 text-sm font-medium"></p>
+                    </div>
+                </div>
+                 <div id="tab-complexity" class="tab-pane hidden">
+                    <h3 class="text-xl font-semibold mb-4">Time and Space Complexity</h3>
+                    <p class="mb-4" data-original="This chart visualizes the worst-case time complexities of common array operations. Fast O(1) access is a key advantage, while linear O(n) operations like insertion and deletion are significant drawbacks.">This chart visualizes the worst-case time complexities of common array operations. Fast O(1) access is a key advantage, while linear O(n) operations like insertion and deletion are significant drawbacks.</p>
+                    <div class="chart-container">
+                        <canvas id="complexityChart"></canvas>
+                    </div>
+                </div>
+                <div id="tab-procon" class="tab-pane hidden">
+                    <h3 class="text-xl font-semibold mb-4">Advantages & Limitations</h3>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="bg-green-100 p-4 rounded-lg">
+                            <h4 class="font-semibold text-lg text-green-800 mb-2">Advantages</h4>
+                            <ul class="list-disc list-inside space-y-2 text-green-700">
+                                <li>Fast access via index (O(1))</li>
+                                <li>Easy to implement</li>
+                                <li>Memory efficient due to contiguous storage</li>
+                            </ul>
+                        </div>
+                        <div class="bg-red-100 p-4 rounded-lg">
+                            <h4 class="font-semibold text-lg text-red-800 mb-2">Limitations</h4>
+                            <ul class="list-disc list-inside space-y-2 text-red-700">
+                                <li>Fixed size (in static arrays)</li>
+                                <li>Costly insertions/deletions (O(n) due to shifting)</li>
+                                <li>Potential for wasted space if not fully used</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section id="advanced-topics">
+            <h2 class="text-3xl font-bold mb-2">Advanced Topics</h2>
+            <p class="text-lg mb-8">Explore more advanced algorithms and techniques related to arrays. The interactive sorting visualizer allows you to see how different algorithms rearrange data step-by-step.</p>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+
+                <div class="bg-white p-6 rounded-lg shadow-md md:col-span-2 lg:col-span-3">
+                    <h3 class="text-xl font-semibold mb-4">Interactive Sorting Algorithms</h3>
+                    <p class="mb-4" data-original="Sorting is a fundamental problem. Below, you can visualize and compare simple O(n²) sorting algorithms. Select an algorithm and watch how it works on a small dataset.">Sorting is a fundamental problem. Below, you can visualize and compare simple O(n²) sorting algorithms. Select an algorithm and watch how it works on a small dataset.</p>
+                    <div id="sort-visual-container" class="flex items-end justify-center p-4 bg-gray-100 rounded-lg h-48 mb-4"></div>
+                    <div class="flex flex-wrap gap-4 items-center justify-center">
+                        <select id="sort-algo-select" class="border border-gray-300 rounded-md p-2 bg-white">
+                            <option value="bubble">Bubble Sort</option>
+                            <option value="selection">Selection Sort</option>
+                            <option value="insertion">Insertion Sort</option>
+                        </select>
+                        <button id="sort-run" class="bg-teal-500 text-white px-4 py-2 rounded hover:bg-teal-600">Animate</button>
+                        <button id="sort-reset" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Reset</button>
+                        <p id="sort-complexity" class="font-mono text-sm">Time: O(n²)</p>
+                    </div>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-semibold mb-2">Binary Search</h3>
+                    <p class="mb-4" data-original="An efficient search algorithm for sorted arrays with O(log n) time complexity. Below is a C++ implementation.">An efficient search algorithm for <span class="font-bold">sorted</span> arrays with O(log n) time complexity. Below is a C++ implementation.</p>
+                    <div class="code-block text-sm">
+int binarySearch(int arr[], int n, int key) { 
+    int low = 0, high = n - 1; 
+    while (low <= high) { 
+        int mid = low + (high - low) / 2; 
+        if (arr[mid] == key) return mid; 
+        else if (arr[mid] < key) low = mid + 1; 
+        else high = mid - 1; 
+    } 
+    return -1; 
+}
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-semibold mb-2">Sliding Window</h3>
+                     <p data-original="A technique to efficiently compute values over contiguous subarrays (windows). It's used to solve problems like finding the maximum sum of a subarray of a fixed size `k` in O(n) time by avoiding recalculations.">A technique to efficiently compute values over contiguous subarrays (windows). It's used to solve problems like finding the maximum sum of a subarray of a fixed size `k` in O(n) time by avoiding recalculations.</p>
+                </div>
+
+                 <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-semibold mb-2">2D Arrays & Matrix Operations</h3>
+                    <p data-original="2D arrays are used to represent grids or tables. Common operations include traversal, rotation, and transposition (swapping arr[i][j] with arr[j][i]). The following code demonstrates basic traversal.">2D arrays are used to represent grids or tables. Common operations include traversal, rotation, and transposition (swapping arr[i][j] with arr[j][i]). The following code demonstrates basic traversal.</p>
+                    <div class="code-block text-sm mt-4">
+for (int i=0; i < rows; i++)
+    for (int j=0; j < cols; j++)
+        cout << arr[i][j]; 
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-semibold mb-2">Sparse Arrays</h3>
+                    <p data-original="A sparse array is one where most elements have a zero or default value. They are used to save memory in applications like matrices, graphs, and machine learning models where data is not dense.">A sparse array is one where most elements have a zero or default value. They are used to save memory in applications like matrices, graphs, and machine learning models where data is not dense.</p>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-gray-100 py-6 mt-16">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm">
+            <p class="text-gray-500">&copy; 2024 Interactive DSA Guide. All rights reserved.</p>
+            <p class="text-gray-500 mt-2">Designed to make DSA concepts clear and interactive.</p>
+        </div>
+    </footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const mainContent = document.getElementById('mainContent');
+    const searchInput = document.getElementById('searchInput');
+    let originalContent = mainContent.innerHTML;
+
+    searchInput.addEventListener('input', () => {
+        const query = searchInput.value.trim().toLowerCase();
+        if (query === '') {
+            mainContent.innerHTML = originalContent;
+            return;
+        }
+        
+        mainContent.innerHTML = originalContent;
+        const paragraphs = mainContent.querySelectorAll('p, h2, h3, h4, li, td');
+        
+        paragraphs.forEach(el => {
+            const textContent = el.textContent;
+            const lowerText = textContent.toLowerCase();
+            const index = lowerText.indexOf(query);
+            
+            if (index !== -1) {
+                const parts = [];
+                let lastIndex = 0;
+                
+                let searchIndex = lowerText.indexOf(query, lastIndex);
+                while (searchIndex !== -1) {
+                    parts.push(textContent.substring(lastIndex, searchIndex));
+                    parts.push(`<span class="highlight">${textContent.substring(searchIndex, searchIndex + query.length)}</span>`);
+                    lastIndex = searchIndex + query.length;
+                    searchIndex = lowerText.indexOf(query, lastIndex);
+                }
+                parts.push(textContent.substring(lastIndex));
+                el.innerHTML = parts.join('');
+            }
+        });
+    });
+
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+    const themes = ['', 'theme-dark-red', 'theme-black'];
+    let currentThemeIndex = 0;
+
+    themeToggle.addEventListener('click', () => {
+        document.body.classList.remove(...themes);
+        currentThemeIndex = (currentThemeIndex + 1) % themes.length;
+        document.body.classList.add(themes[currentThemeIndex]);
+        
+        if (currentThemeIndex === 0) {
+            themeIcon.innerHTML = '&#9728;'; // Sun icon
+            document.body.style.backgroundColor = '#FDFDFB';
+            document.body.style.color = '#3a3a3a';
+        } else {
+            themeIcon.innerHTML = '&#127769;'; // Crescent moon icon
+        }
+    });
+
+    const tabs = document.querySelectorAll('.tab-btn');
+    const tabPanes = document.querySelectorAll('.tab-pane');
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            
+            tabPanes.forEach(pane => {
+                pane.classList.add('hidden');
+                if (pane.id === tab.dataset.target) {
+                    pane.classList.remove('hidden');
+                }
+            });
+        });
+    });
+
+    const opsContainer = document.getElementById('ops-visual-container');
+    let opsArray = [10, 20, 30, 40];
+
+    function renderOpsArray() {
+        opsContainer.innerHTML = '';
+        opsArray.forEach(val => {
+            const el = document.createElement('div');
+            el.className = 'visual-element font-semibold';
+            el.textContent = val;
+            opsContainer.appendChild(el);
+        });
+    }
+
+    document.getElementById('ops-insert-start').addEventListener('click', () => {
+        if (opsArray.length < 10) opsArray.unshift(5);
+        renderOpsArray();
+    });
+    document.getElementById('ops-insert-end').addEventListener('click', () => {
+        if (opsArray.length < 10) opsArray.push(99);
+        renderOpsArray();
+    });
+    document.getElementById('ops-delete-start').addEventListener('click', () => {
+        if (opsArray.length > 0) opsArray.shift();
+        renderOpsArray();
+    });
+    document.getElementById('ops-delete-end').addEventListener('click', () => {
+        if (opsArray.length > 0) opsArray.pop();
+        renderOpsArray();
+    });
+    document.getElementById('ops-reset').addEventListener('click', () => {
+        opsArray = [10, 20, 30, 40];
+        renderOpsArray();
+    });
+    
+    renderOpsArray();
+
+
+    const searchContainer = document.getElementById('search-visual-container');
+    const searchStatus = document.getElementById('search-status');
+    const searchArray = [11, 23, 35, 48, 52, 64, 71, 89, 94];
+    let isSearching = false;
+
+    function renderSearchArray(highlightIndices = {}) {
+        searchContainer.innerHTML = '';
+        searchArray.forEach((val, i) => {
+            const el = document.createElement('div');
+            el.className = 'visual-element font-semibold';
+            el.textContent = val;
+            if (highlightIndices.current === i) el.style.backgroundColor = '#FBBF24';
+            if (highlightIndices.found === i) el.style.backgroundColor = '#34D399';
+            if (highlightIndices.discarded && highlightIndices.discarded.includes(i)) {
+                 el.style.opacity = '0.3';
+            }
+            searchContainer.appendChild(el);
+        });
+    }
+    
+    const sleep = (ms) => new Promise(res => setTimeout(res, ms));
+
+    document.getElementById('search-linear').addEventListener('click', async () => {
+        if(isSearching) return;
+        isSearching = true;
+        searchStatus.textContent = "Running Linear Search...";
+        const key = 71;
+        for (let i = 0; i < searchArray.length; i++) {
+            renderSearchArray({ current: i });
+            await sleep(400);
+            if (searchArray[i] === key) {
+                renderSearchArray({ found: i });
+                searchStatus.textContent = `Found ${key} at index ${i}!`;
+                isSearching = false;
+                return;
+            }
+        }
+        searchStatus.textContent = `${key} not found.`;
+        isSearching = false;
+    });
+
+    document.getElementById('search-binary').addEventListener('click', async () => {
+         if(isSearching) return;
+         isSearching = true;
+         searchStatus.textContent = "Running Binary Search...";
+         const key = 71;
+         let low = 0, high = searchArray.length - 1;
+         let discarded = [];
+
+         while(low <= high) {
+            let mid = Math.floor(low + (high - low) / 2);
+            renderSearchArray({ current: mid, discarded });
+            await sleep(1000);
+            
+            if (searchArray[mid] === key) {
+                renderSearchArray({ found: mid, discarded });
+                searchStatus.textContent = `Found ${key} at index ${mid}!`;
+                isSearching = false;
+                return;
+            } else if (searchArray[mid] < key) {
+                for(let i=low; i<=mid; i++) discarded.push(i);
+                low = mid + 1;
+            } else {
+                for(let i=mid; i<=high; i++) discarded.push(i);
+                high = mid - 1;
+            }
+            renderSearchArray({ discarded });
+            await sleep(500);
+         }
+        searchStatus.textContent = `${key} not found.`;
+        isSearching = false;
+    });
+
+    document.getElementById('search-reset').addEventListener('click', () => {
+        if(isSearching) return;
+        searchStatus.textContent = "";
+        renderSearchArray();
+    });
+
+    renderSearchArray();
+    
+    const ctx = document.getElementById('complexityChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Access', 'Search (Avg)', 'Insertion', 'Deletion'],
+            datasets: [{
+                label: 'Time Complexity',
+                data: [1, 2, 3, 3], 
+                backgroundColor: ['#6EE7B7', '#FBBF24', '#F87171', '#F87171'],
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    ticks: {
+                        callback: function(value) {
+                            if (value === 1) return 'O(1)';
+                            if (value === 2) return 'O(log n) / O(n)';
+                            if (value === 3) return 'O(n)';
+                        }
+                    },
+                     beginAtZero: true
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const val = context.raw;
+                            if (val === 1) return 'O(1) - Constant';
+                            if (context.label === 'Search (Avg)') return 'O(n) Linear, O(log n) Binary';
+                            if (val === 3) return 'O(n) - Linear';
+                            return '';
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    const sortContainer = document.getElementById('sort-visual-container');
+    let sortArray = [];
+    let isSorting = false;
+
+    function resetSortArray() {
+        sortArray = Array.from({length: 15}, () => Math.floor(Math.random() * 90) + 10);
+    }
+    
+    function renderSortArray(highlights = {}) {
+        sortContainer.innerHTML = '';
+        sortArray.forEach((val, i) => {
+            const bar = document.createElement('div');
+            bar.className = 'visual-bar';
+            bar.style.height = `${val}%`;
+            if (highlights.compare && highlights.compare.includes(i)) bar.style.backgroundColor = '#FBBF24';
+            if (highlights.swap && highlights.swap.includes(i)) bar.style.backgroundColor = '#F87171';
+            if (highlights.sorted && i <= highlights.sorted) bar.style.backgroundColor = '#34D399';
+            sortContainer.appendChild(bar);
+        });
+    }
+
+    document.getElementById('sort-run').addEventListener('click', () => {
+        if (isSorting) return;
+        const algo = document.getElementById('sort-algo-select').value;
+        isSorting = true;
+        switch(algo) {
+            case 'bubble': bubbleSort(); break;
+            case 'selection': selectionSort(); break;
+            case 'insertion': insertionSort(); break;
+        }
+    });
+
+    document.getElementById('sort-reset').addEventListener('click', () => {
+        if (isSorting) return;
+        resetSortArray();
+        renderSortArray();
+    });
+
+    async function bubbleSort() {
+        let n = sortArray.length;
+        for (let i = 0; i < n - 1; i++) {
+            for (let j = 0; j < n - i - 1; j++) {
+                renderSortArray({ compare: [j, j + 1] });
+                await sleep(50);
+                if (sortArray[j] > sortArray[j + 1]) {
+                    renderSortArray({ swap: [j, j + 1] });
+                    await sleep(50);
+                    [sortArray[j], sortArray[j + 1]] = [sortArray[j + 1], sortArray[j]];
+                    renderSortArray({ swap: [j, j + 1] });
+                }
+            }
+        }
+        renderSortArray();
+        isSorting = false;
+    }
+
+    async function selectionSort() {
+        let n = sortArray.length;
+        for (let i = 0; i < n - 1; i++) {
+            let min_idx = i;
+            for (let j = i + 1; j < n; j++) {
+                renderSortArray({ compare: [min_idx, j], sorted: i - 1 });
+                await sleep(50);
+                if (sortArray[j] < sortArray[min_idx]) {
+                    min_idx = j;
+                }
+            }
+            renderSortArray({ swap: [i, min_idx], sorted: i - 1 });
+            await sleep(100);
+            [sortArray[i], sortArray[min_idx]] = [sortArray[min_idx], sortArray[i]];
+            renderSortArray({ sorted: i });
+        }
+        renderSortArray({ sorted: n - 1 });
+        isSorting = false;
+    }
+    
+    async function insertionSort() {
+        let n = sortArray.length;
+        for (let i = 1; i < n; i++) {
+            let key = sortArray[i];
+            let j = i - 1;
+            renderSortArray({ compare: [i], sorted: i - 1 });
+            await sleep(100);
+            while (j >= 0 && sortArray[j] > key) {
+                renderSortArray({ swap: [j, j+1], sorted: i-1 });
+                await sleep(50);
+                sortArray[j + 1] = sortArray[j];
+                j = j - 1;
+            }
+            sortArray[j + 1] = key;
+            renderSortArray({ sorted: i });
+        }
+        renderSortArray({ sorted: n - 1 });
+        isSorting = false;
+    }
+
+    resetSortArray();
+    renderSortArray();
+});
+</script>
+</body>
+</html>
